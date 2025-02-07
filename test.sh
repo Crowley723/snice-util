@@ -2,6 +2,26 @@
 # Test Script for CSC139 'snice' command
 # by Brynn Crowley *created leveraging generative ai
 
+#!/bin/bash
+
+# Create and compile a temporary C program to get the system values
+EXIT_VALUES=$(mktemp)
+cat << 'EOF' > ${EXIT_VALUES}.c
+#include <stdlib.h>
+#include <stdio.h>
+int main() {
+    printf("EXIT_SUCCESS=%d\n", EXIT_SUCCESS);
+    printf("EXIT_FAILURE=%d\n", EXIT_FAILURE);
+    return EXIT_SUCCESS;
+}
+EOF
+
+gcc ${EXIT_VALUES}.c -o ${EXIT_VALUES}
+eval $(${EXIT_VALUES})
+
+# Clean up the temporary files
+rm ${EXIT_VALUES}.c ${EXIT_VALUES}
+
 # Colors for output
 GREEN='\033[0;32m'
 RED='\033[0;31m'
@@ -86,46 +106,46 @@ fi
 # Basic Usage Tests
 print_section "Basic Usage Tests"
 run_test "TestShouldFailWithNoArguments" \
-    "./snice" 1
+    "./snice" $EXIT_FAILURE
 
 run_test "TestShouldFailWithMissingPriority" \
-    "./snice -n" 1
+    "./snice -n" $EXIT_FAILURE
 
 run_test "TestShouldFailWithMissingCommand" \
-    "./snice -n 0" 1
+    "./snice -n 0" $EXIT_FAILURE
 
 # Priority Value Tests
 print_section "Priority Value Tests"
 run_test "TestShouldFailWithTooHighPriority" \
-    "./snice -n 20 sleep 1" 1
+    "./snice -n 20 sleep 1" $EXIT_FAILURE
 
 run_test "TestShouldFailWithTooLowPriority" \
-    "./snice -n -21 sleep 1" 1
+    "./snice -n -21 sleep 1" $EXIT_FAILURE
 
 run_test "TestShouldFailWithNonNumericPriority" \
-    "./snice -n abc sleep 1" 1
+    "./snice -n abc sleep 1" $EXIT_FAILURE
 
 run_test "TestShouldSucceedWithValidPriority" \
-    "./snice -n 10 sleep 1" 0
+    "./snice -n 10 sleep 1" $EXIT_SUCCESS
 
 # Process ID Tests
 print_section "Process ID Tests"
 run_test "TestShouldFailWithInvalidPIDFormat" \
-    "./snice -n 0 -p abc" 1
+    "./snice -n 0 -p abc" $EXIT_FAILURE
 
 run_test "TestShouldFailWithNonexistentPID" \
-    "./snice -n 0 -p 999999" 1
+    "./snice -n 0 -p 999999" $EXIT_FAILURE
 
 run_test "TestShouldSucceedWithCurrentPID" \
-    "./snice -n 0 -p $$" 0
+    "./snice -n 0 -p $$" $EXIT_SUCCESS
 
 # Command Execution Tests
 print_section "Command Execution Tests"
 run_test "TestShouldFailWithNonexistentCommand" \
-    "./snice -n 0 nonexistentcommand" 1
+    "./snice -n 0 nonexistentcommand" $EXIT_FAILURE
 
 run_test "TestShouldSucceedWithValidCommand" \
-    "./snice -n 0 echo hello world" 0
+    "./snice -n 0 echo hello world" $EXIT_SUCCESS
 
 # Dynamic Priority Test
 print_section "Dynamic Priority Test"
