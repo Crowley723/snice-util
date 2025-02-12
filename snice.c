@@ -33,13 +33,12 @@ int main(const int argc, char **argv) {
     }
     if (endptr == argv[2]) return EXIT_FAILURE;
     if (*endptr != '\0') return EXIT_FAILURE;
-    if (val > INT_MAX || val < INT_MIN) return EXIT_FAILURE;
     if (val > 19 || val < -20) {
         printf("Invalid priority value\n");
         return EXIT_FAILURE;
     }
 
-    const int priority_value = (int)val;
+    int priority_value = (int)val;
 
 
     if (strcmp(argv[3], "-p") == 0) {
@@ -48,6 +47,7 @@ int main(const int argc, char **argv) {
             return EXIT_FAILURE;
         }
 
+
         char *pid_endptr;
         errno = 0;
         const long pid_val = strtol(argv[4], &pid_endptr, 10);
@@ -55,6 +55,7 @@ int main(const int argc, char **argv) {
             perror("strtol(pid)");
             return EXIT_FAILURE;
         }
+
         if (pid_endptr == argv[4]) return EXIT_FAILURE;
         if (*pid_endptr != '\0') return EXIT_FAILURE;
         if (pid_val > INT_MAX || pid_val < 0) {
@@ -63,23 +64,26 @@ int main(const int argc, char **argv) {
         }
 
         if (setpriority(PRIO_PROCESS, (id_t)pid_val, priority_value) == -1) {
+            if (errno == EPERM || errno == EACCES) {
+                fprintf(stderr, "Permission denied - are you root?\n");
+                return EXIT_FAILURE;
+            }
+            if (errno == ESRCH) {
+                fprintf(stderr, "No process found with pid %ld\n", pid_val);
+                return EXIT_FAILURE;
+            }
             perror("setpriority");
             return EXIT_FAILURE;
         }
-
-        errno = 0;
-        const int new_priority = getpriority(PRIO_PROCESS, (id_t)pid_val);
-        if (errno != 0) {
-            perror("getpriority");
-            return EXIT_FAILURE;
-        }
-        if (new_priority != priority_value) {
-            fprintf(stderr, "Priority not changed to requested value (current: %d)\n", new_priority);
-        }
-
     } else {
-        if (setpriority(PRIO_PROCESS, 0, priority_value) == -1) {
-            perror("setpriority");
+        errno = 0;
+        nice(priority_value);
+        if (errno != 0) {
+            if (errno == EPERM || errno == EACCES) {
+                fprintf(stderr, "Permission denied - are you root?\n");
+                return EXIT_FAILURE;
+            }
+            perror("nice");
             return EXIT_FAILURE;
         }
 

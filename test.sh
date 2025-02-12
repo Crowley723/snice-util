@@ -12,7 +12,7 @@ cat << 'EOF' > ${EXIT_VALUES}.c
 int main() {
     printf("EXIT_SUCCESS=%d\n", EXIT_SUCCESS);
     printf("EXIT_FAILURE=%d\n", EXIT_FAILURE);
-    return EXIT_SUCCESS;
+    return EXIT_SUCCESS;  
 }
 EOF
 
